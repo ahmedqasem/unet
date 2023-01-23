@@ -79,7 +79,11 @@ def main():
         ],
     )
 
+
+    # play with this to change to multiclass output
+    # change out channels for multi class segmentation
     model = UNET(in_channels=3, out_channels=1).to(DEVICE)
+    # change loss function to cross entropy loss for multi channel
     loss_fn = nn.BCEWithLogitsLoss()
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
