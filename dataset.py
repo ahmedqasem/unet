@@ -5,7 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import nibabel as nib
 import cv2
-import torch
+import glob
+import random
 
 
 class CarvanaDataset(Dataset):
@@ -48,16 +49,24 @@ class HecktorDataset(Dataset):
         return len(self.images)
 
     def __getitem__(self, index):
+        # set the path to load images from
+        img_path = os.path.join(self.image_dir, self.images[index])
+        # print(f'loading images from {img_path}')
+        folder_name = img_path.split('\\')[-1]
+        # print(f'folder name is {folder_name}')
+
+        CT_img_path = os.path.join(img_path, f'{folder_name}__CT.nii.gz')
+        # print(f'CT image file name is {CT_img_path}')
         
-        CT_img_path = os.path.join(self.image_dir, self.images[index])
-        # check if it loaded the CT first 
-        if CT_img_path[-11:] == '__PT.nii.gz':
-           CT_img_path = CT_img_path.replace('__PT.nii.gz', '__CT.nii.gz')
-        PET_img_path = os.path.join(self.image_dir, self.images[index].replace('__CT.nii.gz', '__PT.nii.gz'))
-        mask_path = os.path.join(self.mask_dir, self.images[index].replace("__PT.nii.gz", ".nii.gz"))
+        PET_img_path = CT_img_path.replace('__CT.nii.gz', '__PT.nii.gz')
+        # print(f'loading PET from {PET_img_path}')
+
+        mask_path = os.path.join(self.mask_dir, f'{folder_name}.nii.gz')
+        # print(f'loading mask from {mask_path}')
         # load images and mask
         CT_image = nib.load(CT_img_path).get_fdata()
         PET_image = nib.load(PET_img_path).get_fdata()
+        # print(f'loading mask from {mask_path}')
         mask = nib.load(mask_path).get_fdata()
 
         # resize PET image
@@ -79,12 +88,13 @@ class HecktorDataset(Dataset):
 def test():
     img = CarvanaDataset(   image_dir='./data/carvana/train_images',
                             mask_dir= './data/carvana/train_masks')
-    image, mask = img.__getitem__(1)
+    image, mask = img.__getitem__(0)
     print(f'found image: {image.shape}')
     fig, ax = plt.subplots(ncols=2, nrows=1)
     ax[0].imshow(image)
     ax[1].imshow(mask, cmap='gray')
     plt.show()
+
 
 def display_image(image, mask, idx=35):
     n=35
@@ -110,18 +120,21 @@ def display_image(image, mask, idx=35):
     ax[3][0].contour(np.moveaxis(mask, 2, 0)[idx], colors='red')
     plt.show()
 
+
 def test_hecktor():
     img = HecktorDataset(   image_dir='./data/train_images',
                             mask_dir= './data/train_masks')
-    print(f'found {img.__len__()} images')
+    print(f'found {img.__len__()} PET/CT image pairs')
+    
     image, mask = img.__getitem__(1)
     print(f'found image: {image.shape}')
-    # print(f'moved axis {np.moveaxis(image, 2, 0).shape}')
-    # print(np.moveaxis(np.moveaxis(image, 2, 0), 3, 1).shape)
+    print(f'moved axis {np.moveaxis(image, 2, 0).shape}')
+    print(np.moveaxis(np.moveaxis(image, 2, 0), 3, 1).shape)
     print(f'found mask: {np.moveaxis(mask, 2, 0)[0].shape}')
 
     # view sample image and GT
-    # display_image(image, mask)
+    idx = random.randint(0, image.shape[3])
+    display_image(image, mask, idx)
 
 
 if __name__ == "__main__":
