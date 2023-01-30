@@ -86,31 +86,42 @@ def test():
     ax[1].imshow(mask, cmap='gray')
     plt.show()
 
+def display_image(image, mask, idx=35):
+    n=35
+    fig, ax = plt.subplots(ncols=2, nrows=4, figsize=(15,30))
+    ax[0][0].imshow(np.moveaxis(np.moveaxis(image, 2, 0), 3, 1)[0][idx], cmap='gray')
+    ax[0][0].set_title('CT Image')
+    ax[0][1].imshow(np.moveaxis(np.moveaxis(image, 2, 0), 3, 1)[1][idx], cmap='gray')
+    ax[0][1].set_title('PET image')
+    ax[1][0].imshow(np.moveaxis(mask, 2, 0)[idx])
+    ax[1][0].set_title('Mask Image')
+    # contour
+    ax[1][1].imshow(np.moveaxis(np.moveaxis(image, 2, 0), 3, 1)[0][idx], cmap='gray')
+    ax[1][1].contour(np.moveaxis(mask, 2, 0)[idx])
+    # ax5.imshow(np.moveaxis(np.moveaxis(image, 2, 0), 3, 1)[1][n], cmap='gray')
+    # ax5.contour(np.moveaxis(mask, 2, 0)[n])
+    ax[2][0].imshow(np.moveaxis(np.moveaxis(image, 2, 0), 3, 1)[0][idx], cmap='gray')
+    ax[2][0].contour(np.moveaxis(np.moveaxis(image, 2, 0), 3, 1)[1][idx])
+    ax[2][1].imshow(np.moveaxis(np.moveaxis(image, 2, 0), 3, 1)[1][idx], cmap='gray')
+    ax[2][1].contour(np.moveaxis(mask, 2, 0)[idx])
+    # all together 
+    ax[3][0].imshow(np.moveaxis(np.moveaxis(image, 2, 0), 3, 1)[0][idx], cmap='gray')
+    ax[3][0].contour(np.moveaxis(np.moveaxis(image, 2, 0), 3, 1)[1][idx])
+    ax[3][0].contour(np.moveaxis(mask, 2, 0)[idx], colors='red')
+    plt.show()
+
 def test_hecktor():
     img = HecktorDataset(   image_dir='./data/train_images',
                             mask_dir= './data/train_masks')
+    print(f'found {img.__len__()} images')
     image, mask = img.__getitem__(1)
-    # print(f'found image: {image.shape}')
+    print(f'found image: {image.shape}')
     # print(f'moved axis {np.moveaxis(image, 2, 0).shape}')
     # print(np.moveaxis(np.moveaxis(image, 2, 0), 3, 1).shape)
     print(f'found mask: {np.moveaxis(mask, 2, 0)[0].shape}')
 
-    n=35
-    fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(ncols=5, nrows=1, figsize=(15,30))
-    ax1.imshow(np.moveaxis(np.moveaxis(image, 2, 0), 3, 1)[0][n], cmap='gray')
-    ax1.set_title('CT Image')
-    ax2.imshow(np.moveaxis(np.moveaxis(image, 2, 0), 3, 1)[1][n], cmap='gray')
-    ax2.set_title('PET image')
-    ax3.imshow(np.moveaxis(mask, 2, 0)[n])
-    ax3.set_title('Mask Image')
-    # contour
-    ax4.imshow(np.moveaxis(np.moveaxis(image, 2, 0), 3, 1)[0][n], cmap='gray')
-    ax4.contour(np.moveaxis(mask, 2, 0)[n])
-    # ax5.imshow(np.moveaxis(np.moveaxis(image, 2, 0), 3, 1)[1][n], cmap='gray')
-    # ax5.contour(np.moveaxis(mask, 2, 0)[n])
-    ax5.imshow(np.moveaxis(np.moveaxis(image, 2, 0), 3, 1)[0][n], cmap='gray')
-    ax5.contour(np.moveaxis(np.moveaxis(image, 2, 0), 3, 1)[1][n])
-    plt.show()
+    # view sample image and GT
+    # display_image(image, mask)
 
 
 if __name__ == "__main__":
