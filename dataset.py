@@ -46,7 +46,13 @@ class HecktorDataset(Dataset):
         self.images = os.listdir(image_dir)
 
     def __len__(self):
-        return len(self.images)
+        
+        # for each image folder get the slices for CT image
+        slices = 0
+        for image in self.images:
+            CT = os.path.join(self.image_dir, f'{image}/{image}__CT.nii.gz')
+            slices += nib.load(CT).get_fdata().shape[2]
+        return slices
 
     def __getitem__(self, index):
         # set the path to load images from
@@ -127,14 +133,14 @@ def test_hecktor():
     print(f'found {img.__len__()} PET/CT image pairs')
     
     image, mask = img.__getitem__(1)
-    print(f'found image: {image.shape}')
-    print(f'moved axis {np.moveaxis(image, 2, 0).shape}')
-    print(np.moveaxis(np.moveaxis(image, 2, 0), 3, 1).shape)
-    print(f'found mask: {np.moveaxis(mask, 2, 0)[0].shape}')
+    # print(f'found image: {image.shape}')
+    # print(f'moved axis {np.moveaxis(image, 2, 0).shape}')
+    # print(np.moveaxis(np.moveaxis(image, 2, 0), 3, 1).shape)
+    # print(f'found mask: {np.moveaxis(mask, 2, 0)[0].shape}')
 
     # view sample image and GT
     idx = random.randint(0, image.shape[3])
-    display_image(image, mask, idx)
+    # display_image(image, mask, idx)
 
 
 if __name__ == "__main__":
