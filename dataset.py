@@ -71,15 +71,17 @@ class HecktorDataset(Dataset):
         # print(f'loading mask from {mask_path}')
         # load images and mask
         CT_image = nib.load(CT_img_path).get_fdata()
+        CT_image_norm = (CT_image-np.min(CT_image))/(np.max(CT_image)-np.min(CT_image))
         PET_image = nib.load(PET_img_path).get_fdata()
-        # print(f'loading mask from {mask_path}')
+        # normalize pet image
+        PET_image_norm = (PET_image-np.min(PET_image))/(np.max(PET_image)-np.min(PET_image))
+        print(np.max(PET_image_norm))
         mask = nib.load(mask_path).get_fdata()
 
         # resize PET image
-        pet_r = cv2.resize(PET_image, (CT_image.shape[0], CT_image.shape[1]) )
+        pet_r = cv2.resize(PET_image_norm, (CT_image_norm.shape[0], CT_image_norm.shape[1]) )
         # convert PET CT to 2 channel image
         image = np.moveaxis(np.concatenate((np.expand_dims(CT_image, axis=0), np.expand_dims(pet_r, axis=0)), axis=0), 0, -2)
-        
         # change mask values from 255 t0 0-1
         mask[mask==255.0] = 1
 
@@ -140,7 +142,7 @@ def test_hecktor():
 
     # view sample image and GT
     idx = random.randint(0, image.shape[3])
-    # display_image(image, mask, idx)
+    display_image(image, mask, idx)
 
 
 if __name__ == "__main__":

@@ -66,8 +66,8 @@ class UNET(nn.Module):
         return self.final_conv(x)
 
 def test():
-    x = torch.randn((2, 1, 161, 161))
-    model = UNET(in_channels=1, out_channels=1)
+    x = torch.randn((3, 2, 161, 161)) # (batch, channels, width, height)
+    model = UNET(in_channels=2, out_channels=2) # input channels (PET/CT), out channels mask for each
     preds = model(x)
     print(preds.shape)
     print(x.shape)
