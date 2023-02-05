@@ -12,10 +12,10 @@ from fastai.medical.imaging import *
 
 
 # load image
-def getimage(img_path, mask_path):
+def getimage(img_path, mask_path, folder_name):
         # set file names and path
-        folder_name = img_path.split('\\')[-1]
-        CT_img_path = os.path.join(img_path, f'{folder_name}__CT.nii.gz')     
+        # folder_name = img_path.split('\\')[-1]
+        CT_img_path = img_path+'__CT.nii.gz'
         PET_img_path = CT_img_path.replace('__CT.nii.gz', '__PT.nii.gz')
         mask_path = mask_path + '.nii.gz'
 
@@ -23,6 +23,7 @@ def getimage(img_path, mask_path):
         CT_image = nib.load(CT_img_path).get_fdata()
         PET_image = nib.load(PET_img_path).get_fdata()
         mask = nib.load(mask_path).get_fdata()
+        print(CT_image.shape, PET_image.shape, mask.shape)
 
         # resize PET image
         pet_r = cv2.resize(PET_image, (CT_image.shape[0], CT_image.shape[1]) )
@@ -41,8 +42,8 @@ def apply_window(img, width=500, center=40):
 
     # normalize image
     img_scaled = np.interp(img, (img.min(), img.max()), (0, +1))
-    print(img_scaled.shape)
-    print(np.min(img_scaled), np.max(img_scaled))
+    # print(img_scaled.shape)
+    # print(np.min(img_scaled), np.max(img_scaled))
     return img
 
 def separate_labels(mask):
@@ -56,7 +57,6 @@ def separate_labels(mask):
     return gtvp
 
 def save_images(imgs, trgt_path, img_name, number):
-    # create directory
     
     # create suffix
     sfx=f"{number:04d}"
@@ -98,20 +98,42 @@ def display_multiple(ct, pet, mask, idx=32):
     ax[1][2].set_title('All together')
     plt.show()
 
+def get_image_list(path):
+    files = os.listdir(path)
+    img_list = []
+    for file in files:
+        file = file.split('__')[0]
+        img_list.append(file)
+    return set(img_list)
 
+def get_length(gpath, mpath):
+    img_lst = sorted(get_image_list(gpath))
+    img_dict = dict() 
+    for m in img_lst:
+        img_path = os.path.join(gpath, m)
+        msk_path = os.path.join(mpath, m)
+        try:
+            ct, pet, mask = getimage(img_path, msk_path, m)
+        except Exception as e:
+            print(f'failed at {m}')
+            print(e)
+            continue
+        img_dict[m] = [ct.shape[2], pet.shape[2], mask.shape[2]]
+        print(m, img_dict[m])
 
-def test():
+def main():
     # path to data
-    image_dir ='./data/imagesTr'
-    mask_dir = './data/labelsTr'
-    trgt_dir = './data/jpg' 
+    image_dir ='E:/Datasets/monte_carlo_segmentation/hecktor2022_training/hecktor2022/imagesTr'
+    mask_dir = 'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/hecktor2022/labelsTr'
+    trgt_dir = 'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/jpg' 
     
-    image_list = os.listdir(image_dir)
+    image_list = sorted(get_image_list(image_dir))
     print(f'found {len(image_list)} images ')
     # print(image_list)
 
     # get image path
     for img in image_list: 
+        print(f'working on {img}')
     # img = image_list[0]
         img_path = os.path.join(image_dir, img)
         # print(img_path)
@@ -121,9 +143,25 @@ def test():
         # print(msk_path)
         
         # get image
-        ct, pet, mask = getimage(img_path, msk_path)
+        try:
+            ct, pet, mask = getimage(img_path, msk_path, img)
+            assert ct.shape == mask.shape
+            assert ct.shape == pet.shape
+            assert ct.shape == mask.shape
 
-        for i in range(ct.shape[2]):
+            with open(trgt_dir+'/success.txt', 'a') as f:
+                f.write(f'{img}\n')
+
+        except Exception as e:
+            print(f'failed at {img}')
+            print(e)
+            with open(trgt_dir+'/log.txt', 'a') as f:
+                f.write(f'{img} -- failed \n')
+            continue
+        lengths = [ct.shape[2], pet.shape[2]]
+        print(lengths[np.argmin(lengths)])
+
+        for i in range(lengths[np.argmin(lengths)]):
             # CT windowing image
             # i=32
             scaled_ct = apply_window(ct[:,:,i], width=500, center=40)
@@ -133,10 +171,14 @@ def test():
             
             
             # add function to save CT, PET, MASK as png
-            # save_images((scaled_ct, pet_slice, mask_slice), trgt_dir, img, number=i)
+            save_images((scaled_ct, pet_slice, mask_slice), trgt_dir, img, number=i)
+        print(f'{img} saved')
             # display image
             # display_single(scaled_ct, idx=32, mk=False)
             # display_multiple(scaled_ct, pet_slice, mask_slice, idx=i)
 
 if __name__ == '__main__':
-    test()
+    image_dir ='E:/Datasets/monte_carlo_segmentation/hecktor2022_training/hecktor2022/imagesTr'
+    mask_dir = 'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/hecktor2022/labelsTr'
+    main()
+    # get_length(image_dir, mask_dir)
