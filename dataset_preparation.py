@@ -76,27 +76,47 @@ def display_single(image, idx=0, mk=True):
     plt.show()
 
 
-def display_multiple(ct, pet, mask, idx=32):
-    n=35
-    fig, ax = plt.subplots(ncols=3, nrows=2, figsize=(15,30))
-    ax[0][0].imshow(ct, cmap='gray')
-    ax[0][0].set_title('CT Image')
-    ax[0][1].imshow(mask, cmap='gray')
-    ax[0][1].set_title('GT')
-    ax[0][2].imshow(pet, cmap='gray')
-    ax[0][2].set_title('PET')
-    # # contour
-    ax[1][0].imshow(ct, cmap='gray')
-    ax[1][0].contour(mask, colors='red')
-    ax[1][0].set_title('GT on CT')
-    ax[1][1].imshow(pet, cmap='gray')
-    ax[1][1].contour(mask, colors='red')
-    ax[1][1].set_title('GT on PET')
-    ax[1][2].imshow(ct, cmap='gray')
-    ax[1][2].contour(pet)
-    ax[1][2].contour(mask, colors='red')
-    ax[1][2].set_title('All together')
-    plt.show()
+def display_multiple(ct, pet, mask, idx=32, volume=True):
+    if volume:
+        fig, ax = plt.subplots(ncols=3, nrows=2, figsize=(15,30))
+        ax[0][0].imshow(ct[:,:,idx], cmap='gray')
+        ax[0][0].set_title('CT Image')
+        ax[0][1].imshow(mask[:,:,idx], cmap='gray')
+        ax[0][1].set_title('GT')
+        ax[0][2].imshow(pet[:,:,idx], cmap='gray')
+        ax[0][2].set_title('PET')
+        # # contour
+        ax[1][0].imshow(ct[:,:,idx], cmap='gray')
+        ax[1][0].contour(mask[:,:,idx], colors='red')
+        ax[1][0].set_title('GT on CT')
+        ax[1][1].imshow(pet[:,:,idx], cmap='gray')
+        ax[1][1].contour(mask[:,:,idx], colors='red')
+        ax[1][1].set_title('GT on PET')
+        ax[1][2].imshow(ct[:,:,idx], cmap='gray')
+        ax[1][2].contour(pet[:,:,idx])
+        ax[1][2].contour(mask[:,:,idx], colors='red')
+        ax[1][2].set_title('All together')
+        plt.show()
+    else:
+        fig, ax = plt.subplots(ncols=3, nrows=2, figsize=(15,30))
+        ax[0][0].imshow(ct, cmap='gray')
+        ax[0][0].set_title('CT Image')
+        ax[0][1].imshow(mask, cmap='gray')
+        ax[0][1].set_title('GT')
+        ax[0][2].imshow(pet, cmap='gray')
+        ax[0][2].set_title('PET')
+        # # contour
+        ax[1][0].imshow(ct, cmap='gray')
+        ax[1][0].contour(mask, colors='red')
+        ax[1][0].set_title('GT on CT')
+        ax[1][1].imshow(pet, cmap='gray')
+        ax[1][1].contour(mask, colors='red')
+        ax[1][1].set_title('GT on PET')
+        ax[1][2].imshow(ct, cmap='gray')
+        ax[1][2].contour(pet)
+        ax[1][2].contour(mask, colors='red')
+        ax[1][2].set_title('All together')
+        plt.show()
 
 def get_image_list(path):
     files = os.listdir(path)
@@ -177,8 +197,50 @@ def main():
             # display_single(scaled_ct, idx=32, mk=False)
             # display_multiple(scaled_ct, pet_slice, mask_slice, idx=i)
 
+def test_image_extracts(img_path, msk_path):
+    # img = 'CHUV-042'
+    # img_path=os.path.join(img_path, img)
+    # msk_path=os.path.join(msk_path, img)
+    
+    # ct, pet, mask = getimage(img_path, msk_path, img)
+    # display_multiple(ct, pet, mask, idx=10)
+
+    img = 'CHUM-001-0032__CT.png'
+    img_path=os.path.join(img_path, img)
+    pet_path=img_path.replace('__CT.png', '__PT.png')
+    msk_path=os.path.join(msk_path, img).replace('__CT.png', '.png')
+    print(img_path)
+    print(pet_path)
+    print(msk_path)
+    ct = np.array(Image.open(img_path).convert('L'))
+    pet = np.array(Image.open(pet_path).convert('L'))
+    mask = np.array(Image.open(msk_path).convert('L'))
+    print(mask.shape)
+    # show images 
+    fig, ax = plt.subplots(ncols=3, nrows=2, figsize=(15,30))
+    ax[0][0].imshow(ct, cmap='gray')
+    ax[0][0].set_title('CT Image')
+    ax[0][1].imshow(mask, cmap='gray')
+    ax[0][1].set_title('GT')
+    ax[0][2].imshow(pet, cmap='gray')
+    ax[0][2].set_title('PET')
+    # # contour
+    ax[1][0].imshow(ct, cmap='gray')
+    ax[1][0].contour(mask, colors='red')
+    ax[1][0].set_title('GT on CT')
+    ax[1][1].imshow(pet, cmap='gray')
+    ax[1][1].contour(mask, colors='red')
+    ax[1][1].set_title('GT on PET')
+    ax[1][2].imshow(ct, cmap='gray')
+    ax[1][2].contour(pet)
+    ax[1][2].contour(mask, colors='red')
+    ax[1][2].set_title('All together')
+    plt.show()
+    
+
 if __name__ == '__main__':
-    image_dir ='E:/Datasets/monte_carlo_segmentation/hecktor2022_training/hecktor2022/imagesTr'
-    mask_dir = 'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/hecktor2022/labelsTr'
-    main()
+    image_dir ='E:/Datasets/monte_carlo_segmentation/hecktor2022_training/jpg/train_images'
+    mask_dir = 'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/jpg/train_masks'
+    # main()
+    test_image_extracts(image_dir, mask_dir)
     # get_length(image_dir, mask_dir)
