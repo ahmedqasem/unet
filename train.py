@@ -16,17 +16,17 @@ from utils import (
 # Hyperparameters
 LEARNING_RATE = 1e-4
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-BATCH_SIZE = 16
+BATCH_SIZE = 32
 NUM_EPOCHS = 100
 NUM_WORKERS = 2
 IMAGE_HEIGHT = 160 # 1280 originally
-IMAGE_WIDTH = 240 # 1918 originally
+IMAGE_WIDTH = 160 # 1918 originally
 PIN_MEMORY = True
 LOAD_MODEL = True
-TRAIN_IMG_DIR = 'data/train_images/'
-TRAIN_MASK_DIR = 'data/train_masks/'
-VAL_IMG_DIR = 'data/valid_images/'
-VAL_MASK_DIR = 'data/valid_masks/'
+TRAIN_IMG_DIR = 'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/jpg/train_images'
+TRAIN_MASK_DIR = 'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/jpg/train_masks'
+VAL_IMG_DIR = 'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/jpg/valid_images'
+VAL_MASK_DIR = 'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/jpg/valid_masks'
 CHECKPOINT = 'my_checkpoint.pth.tar'
 
 def train_fn(loader, model, optimizer, loss_fn, scaler):
@@ -84,7 +84,7 @@ def main():
     # change out channels for multi class segmentation
     model = UNET(in_channels=3, out_channels=1).to(DEVICE)
     # change loss function to cross entropy loss for multi channel
-    loss_fn = nn.BCEWithLogitsLoss()
+    loss_fn = nn.BCEWithLogitsLoss() #nn.CrossEntropyLoss() 
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
     # get the loaders
@@ -109,6 +109,7 @@ def main():
     scaler = torch.cuda.amp.GradScaler()
 
     for epoch in range(NUM_EPOCHS):
+        print(f'epoch {epoch}/{NUM_EPOCHS}')
         train_fn(train_loader, model, optimizer, loss_fn, scaler)
 
         # save model
@@ -122,12 +123,12 @@ def main():
         check_accuracy(val_loader, model, device=DEVICE)
 
         # print some examples to a folder
-        save_predictions_as_imgs(
-            val_loader,
-            model,
-            folder='./saved_images/', 
-            device=DEVICE
-        )
+        # save_predictions_as_imgs(
+        #     val_loader,
+        #     model,
+        #     folder='./saved_images/', 
+        #     device=DEVICE
+        # )
 
 
 if __name__ == '__main__':

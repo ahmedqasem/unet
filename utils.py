@@ -1,6 +1,6 @@
 import torch 
 import torchvision
-from dataset import CarvanaDataset
+from dataset import CarvanaDataset, HecktorDataset_CT
 from torch.utils.data import DataLoader
 
 def save_checkpoint(state, filename='my_checkpoint.pth.tar'):
@@ -25,7 +25,7 @@ def get_loaders(
     pin_memory=True
 ):
 
-    train_ds = CarvanaDataset(
+    train_ds = HecktorDataset_CT(
         image_dir=train_dir,
         mask_dir=train_maskdir,
         transform=train_transform
@@ -39,7 +39,7 @@ def get_loaders(
         shuffle=True
     )
 
-    val_ds = CarvanaDataset(
+    val_ds = HecktorDataset_CT(
         image_dir=val_dir,
         mask_dir=val_maskdir,
         transform=val_transform
@@ -61,7 +61,7 @@ def check_accuracy(loader, model, device='cuda'):
     num_pixels = 0
     dice_score = 0
     model.eval()
-
+    print('********************', len(loader))
     with torch.no_grad():
         for x,y in loader:
             x = x.to(device)
