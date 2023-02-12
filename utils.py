@@ -2,6 +2,8 @@ import torch
 import torchvision
 from dataset import CarvanaDataset, HecktorDataset_CT
 from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
+import numpy as np
 
 def save_checkpoint(state, filename='my_checkpoint.pth.tar'):
     print('=> Saving checkpoint')
@@ -56,6 +58,32 @@ def get_loaders(
     return train_loader, val_loader
 
 
+def get_val_loader(
+    val_dir, 
+    val_maskdir, 
+    batch_size,
+    val_transform,
+    num_workers=4,
+    pin_memory=True
+):
+
+    val_ds = HecktorDataset_CT(
+        image_dir=val_dir,
+        mask_dir=val_maskdir,
+        transform=val_transform
+    )
+
+    val_loader = DataLoader(
+        val_ds,
+        batch_size=batch_size,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
+        shuffle=False
+    )
+
+    return val_loader
+
+
 def check_accuracy(loader, model, device='cuda'):
     num_correct = 0
     num_pixels = 0
@@ -82,17 +110,25 @@ def check_accuracy(loader, model, device='cuda'):
 def save_predictions_as_imgs(
     loader, model, folder='saved_images/', device='cuda'
 ):
-    model.eval()
+    model.eval() # set the model into eval mode
     for idx, (x,y) in enumerate(loader):
         x = x.to(device=device)
+        y = y.to(device=device)
+        
         with torch.no_grad():
+            preds = model(x)
             preds = torch.sigmoid(model(x))
             preds = (preds > 0.5).float()
         
         torchvision.utils.save_image(
             preds, f'{folder}/pred_{idx}.png'
         )
-
-        torchvision.utils.save_image(y.unsqueeze(1), f"{folder}{idx}.png")
+        
+        # save GT
+        yy = y[0].cpu()
+        plt.imsave(f"{folder}/gt_{idx}.png", yy, cmap='gray')
+        # save image 
+        xx = x[0][0].cpu()
+        plt.imsave(f"{folder}/image_{idx}.png", xx, cmap='gray')
 
         model.train()

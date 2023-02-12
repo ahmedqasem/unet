@@ -126,7 +126,7 @@ class HecktorDataset_CT(Dataset):
         # print(f'folder name is {slice_name}')
 
         CT_img_path = os.path.join(self.image_dir, f'{slice_name}__CT.png')
-        # print(f'CT image file name is {CT_img_path}')
+        print(f'CT image file name is {CT_img_path}')
         
         # PET_img_path = CT_img_path.replace('__CT.png', '__PT.png')
         # print(f'loading PET from {PET_img_path}')
