@@ -110,12 +110,7 @@ class HecktorDataset_CT(Dataset):
         self.images = os.listdir(image_dir)
 
     def __len__(self):
-        try:
-            assert len(self.images)//2 == len(self.images)/2
-            return len(self.images)//2
-        except Exception as e:
-            print(e)
-            return 0
+        return len(self.images)
         
 
     def __getitem__(self, index):
@@ -258,5 +253,11 @@ def test_hecktor():
     display_image3(image, mask, idx)
 
 
+def test_ct():
+    image_dir ='E:/Datasets/monte_carlo_segmentation/hecktor2022_training/hecktor2022/imagesTr'
+    mask_dir = 'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/hecktor2022/labelsTr'
+    img = HecktorDataset_CT(image_dir=image_dir, mask_dir=mask_dir)
+    print(f'found {img.__len__()} PET/CT image pairs')
+
 if __name__ == "__main__":
-    test_hecktor()
+    test_ct()
