@@ -15,21 +15,38 @@ def getimage(img_path, mask_path, folder_name, PET=False):
         # set file names and path
         # folder_name = img_path.split('\\')[-1]
         CT_img_path = img_path+'__CT.nii.gz'
-        PET_img_path = CT_img_path.replace('__CT.nii.gz', '__PT.nii.gz')
+        if PET:
+            PET_img_path = CT_img_path.replace('__CT.nii.gz', '__PT.nii.gz')
         mask_path = mask_path + '.nii.gz'
 
         # load images and mask
         CT_image = nib.load(CT_img_path).get_fdata()
-        PET_image = nib.load(PET_img_path).get_fdata()
+        if PET:
+            PET_image = nib.load(PET_img_path).get_fdata()
         mask = nib.load(mask_path).get_fdata()
         print(CT_image.shape, PET_image.shape, mask.shape)
 
-        # resize PET image
-        pet_r = cv2.resize(PET_image, (CT_image.shape[0], CT_image.shape[1]) )
-        # normalize PET image
-        PET_image = (pet_r-np.min(pet_r))/(np.max(pet_r)-np.min(pet_r))
+        if PET:
+            # resize PET image
+            pet_r = cv2.resize(PET_image, (CT_image.shape[0], CT_image.shape[1]) )
+            # normalize PET image
+            PET_image = (pet_r-np.min(pet_r))/(np.max(pet_r)-np.min(pet_r))
+        if PET:
+            return CT_image, PET_image, mask
+        return CT_image, mask
 
-        return CT_image, PET_image, mask
+def get_ct_image(img_path, mask_path, folder_name):
+        # set file names and path
+        # folder_name = img_path.split('\\')[-1]
+        CT_img_path = img_path+'__CT.nii.gz'
+        mask_path = mask_path + '.nii.gz'
+
+        # load images and mask
+        CT_image = nib.load(CT_img_path).get_fdata()
+        mask = nib.load(mask_path).get_fdata()
+        print(CT_image.shape, mask.shape)
+
+        return CT_image, mask
 
 def apply_window(img, width=500, center=40):
     # np.interp(a, (a.min(), a.max()), (-1, +1))
@@ -63,6 +80,16 @@ def save_images(imgs, trgt_path, img_name, number):
     plt.imsave(f'{trgt_path}/train_images/{img_name}-{sfx}__CT.png', imgs[0], cmap='gray')
     plt.imsave(f'{trgt_path}/train_images/{img_name}-{sfx}__PT.png', imgs[1], cmap='gray')
     plt.imsave(f'{trgt_path}/train_masks/{img_name}-{sfx}.png', imgs[2], cmap='gray')
+    # save label into masks folder
+    return 
+
+def save_ct_png(imgs, trgt_path, img_name, number, step='train'):
+    
+    # create suffix
+    sfx=f"{number:04d}"
+    # save CT and PET into images folder
+    plt.imsave(f'{trgt_path}/{step}_images/{img_name}-{sfx}__CT.png', imgs[0], cmap='gray')
+    plt.imsave(f'{trgt_path}/{step}_labels/{img_name}-{sfx}.png', imgs[1], cmap='gray')
     # save label into masks folder
     return 
 
@@ -324,6 +351,68 @@ def split_dataset(data_dir,
     print('test train split completed')
 
 
+def ct_to_png(step='train'):
+    ''' convert ct pet and mask to png '''
+    # path to data
+    image_dir = f'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/ct_only/{step}_images'
+    mask_dir = f'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/ct_only/{step}_labels'
+    trgt_dir = 'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/ct_only_png/' 
+    
+    image_list = sorted(get_image_list(image_dir))
+    print(f'starting {step} -- found {len(image_list)} images ')
+    # print(image_list)
+
+    with open(trgt_dir+'/success.txt', 'a') as f:
+                f.write(f'******{step}*****\n')
+
+    # get image path
+    for img in image_list: 
+        print(f'working on {img}')
+        
+    # img = image_list[0]
+        img_path = os.path.join(image_dir, img)
+        # print(img_path)
+        
+        # get mask path 
+        msk_path = os.path.join(mask_dir, img)
+        # print(msk_path)
+        
+        # get image
+        try:
+            ct, mask = get_ct_image(img_path, msk_path, img)
+            assert ct.shape == mask.shape
+            assert ct.shape == mask.shape
+
+            with open(trgt_dir+'/success.txt', 'a') as f:
+                f.write(f'{img} {ct.shape}\n')
+
+        except Exception as e:
+            print(f'failed at {img}')
+            print(e)
+            with open(trgt_dir+'/log.txt', 'a') as f:
+                f.write(f'{img} -- failed \n')
+            continue
+        
+        lengths = [ct.shape[2], mask.shape[2]]
+        # print(lengths[np.argmin(lengths)])
+        
+        for i in range(lengths[np.argmin(lengths)]):
+            # CT windowing image
+            # i=32
+            scaled_ct = apply_window(ct[:,:,i], width=500, center=40)
+            
+            # add function to extract each class from mask
+            mask_slice = separate_labels(mask[:,:,i])
+            
+            
+            # add function to save CT, PET, MASK as png
+            save_ct_png((scaled_ct, mask_slice), trgt_dir, img, number=i, step=step)
+        print(f'{step} -- {img} saved')
+        
+            # display image
+            # display_single(scaled_ct, idx=32, mk=False)
+            # display_multiple(scaled_ct, pet_slice, mask_slice, idx=i)
+
 if __name__ == '__main__':
     image_dir ='E:/Datasets/monte_carlo_segmentation/hecktor2022_training/jpg/train_images'
     mask_dir = 'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/jpg/train_masks'
@@ -351,3 +440,8 @@ if __name__ == '__main__':
     #              mask_valid,
     #              image_test,
     #              mask_test )
+
+    ''' convert CT and Mask to PNG '''
+    steps = ['test', 'valid', 'train']
+    for step in steps:
+        ct_to_png(step=step)
