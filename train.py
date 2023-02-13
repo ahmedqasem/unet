@@ -16,18 +16,18 @@ from utils import (
 # Hyperparameters
 LEARNING_RATE = 1e-4
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-BATCH_SIZE = 32
+BATCH_SIZE = 16
 NUM_EPOCHS = 100
 NUM_WORKERS = 2
 IMAGE_HEIGHT = 160 # 1280 originally
 IMAGE_WIDTH = 160 # 1918 originally
 PIN_MEMORY = True
-LOAD_MODEL = True
-TRAIN_IMG_DIR = 'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/jpg/train_images'
-TRAIN_MASK_DIR = 'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/jpg/train_masks'
-VAL_IMG_DIR = 'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/jpg/valid_images'
-VAL_MASK_DIR = 'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/jpg/valid_masks'
-CHECKPOINT = 'my_checkpoint.pth.tar'
+LOAD_MODEL = False
+TRAIN_IMG_DIR = 'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/ct_only_png/train_images'
+TRAIN_MASK_DIR = 'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/ct_only_png/train_labels'
+VAL_IMG_DIR = 'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/ct_only_png/valid_images'
+VAL_MASK_DIR = 'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/ct_only_png/valid_labels'
+CHECKPOINT = '220212-ctonlypng.pth.tar'
 
 def train_fn(loader, model, optimizer, loss_fn, scaler):
     loop = tqdm(loader)
@@ -52,6 +52,7 @@ def train_fn(loader, model, optimizer, loss_fn, scaler):
 
 
 def main():
+    # create the augmentation pipeline
     train_transform = A.Compose(
         [
             A.Resize(height=IMAGE_HEIGHT, width=IMAGE_WIDTH),
@@ -59,9 +60,10 @@ def main():
             A.HorizontalFlip(p=0.5),
             A.VerticalFlip(p=0.1),
             A.Normalize(
-                mean=[0.0, 0.0, 0.0],
-                std=[1.0, 1.0, 1.0],
-                max_pixel_value=255.0,
+                # mean=[0.0, 0.0, 0.0],
+                # std=[1.0, 1.0, 1.0],
+                #max_pixel_value=255.0,
+                mean=0.5, std=0.5 # if single channel
             ),
             ToTensorV2(),
         ],
@@ -71,9 +73,10 @@ def main():
         [
             A.Resize(height=IMAGE_HEIGHT, width=IMAGE_WIDTH),
             A.Normalize(
-                mean=[0.0, 0.0, 0.0],
-                std=[1.0, 1.0, 1.0],
-                max_pixel_value=255.0,
+                # mean=[0.0, 0.0, 0.0],
+                # std=[1.0, 1.0, 1.0],
+                # max_pixel_value=255.0,
+                mean=0.5, std=0.5 # if single channel
             ),
             ToTensorV2(),
         ],
@@ -82,7 +85,7 @@ def main():
 
     # play with this to change to multiclass output
     # change out channels for multi class segmentation
-    model = UNET(in_channels=3, out_channels=1).to(DEVICE)
+    model = UNET(in_channels=1, out_channels=1).to(DEVICE)
     # change loss function to cross entropy loss for multi channel
     loss_fn = nn.BCEWithLogitsLoss() #nn.CrossEntropyLoss() 
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
@@ -109,7 +112,7 @@ def main():
     scaler = torch.cuda.amp.GradScaler()
 
     for epoch in range(NUM_EPOCHS):
-        print(f'epoch {epoch}/{NUM_EPOCHS}')
+        print(f'epoch {epoch+1}/{NUM_EPOCHS}')
         train_fn(train_loader, model, optimizer, loss_fn, scaler)
 
         # save model

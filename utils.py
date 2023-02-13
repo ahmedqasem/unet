@@ -89,10 +89,10 @@ def check_accuracy(loader, model, device='cuda'):
     num_pixels = 0
     dice_score = 0
     model.eval()
-    print('********************', len(loader))
+    # print('********************', len(loader))
     with torch.no_grad():
         for x,y in loader:
-            x = x.to(device)
+            x = x.to(device)#.unsqueeze(1) # unsqueeze because 1 channel images 
             y = y.to(device).unsqueeze(1)
             preds = torch.sigmoid(model(x))
             preds = (preds > 0.5).float()
