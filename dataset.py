@@ -125,7 +125,7 @@ class HecktorDataset_CT(Dataset):
         mask_path = os.path.join(self.mask_dir, f'{slice_name}.png')
         # print(f'loading mask from {mask_path}')
         # load images and mask
-        CT_image = np.array(Image.open(CT_img_path).convert('L'), dtype=np.float32)
+        CT_image = np.array(Image.open(CT_img_path).convert('RGB'), dtype=np.float32)
         # print('ct shape is: ', CT_image.shape)
         mask = np.array(Image.open(mask_path).convert('L'), dtype=np.float32)
         # print('mask shape is: ', mask.shape)
