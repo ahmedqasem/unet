@@ -350,6 +350,106 @@ def split_dataset(data_dir,
         
     print('test train split completed')
 
+def split_dataset_pet(data_dir, 
+                    label_dir, 
+                    train_data_dir ='', 
+                    train_label_dir='', 
+                    val_data_dir='', 
+                    val_label_dir='',
+                    test_data_dir='', 
+                    test_label_dir='', 
+                    train_split=0.75, 
+                    val_split=0.1, 
+                    seed=42):
+
+    ''' split and move CT and labels from src to trgt '''
+    # Set the random seed
+    random.seed(seed)
+
+    # Get a list of all image filenames in the data directory
+    data_filenames = os.listdir(data_dir)
+    data_filenames = sorted(list(set([filename.split('_')[0] for filename in data_filenames if filename.endswith('.png')])))
+    print('slices: ', len(data_filenames), data_filenames[2])
+    
+    volumes = sorted(list(set([f.split('-')[0]+'-'+f.split('-')[1] for f in data_filenames])))
+    print('volumes: ', len(volumes), volumes[0])
+
+
+    # Shuffle the volumes
+    random.shuffle(volumes)
+
+    # Calculate the number of images for each split
+    num_train = int(len(data_filenames) * train_split)
+    num_val = int(len(data_filenames) * val_split)
+    print('slices: ', num_train, num_val)
+    
+    # Calculate the number of images for each split
+    num_train_v = int(len(volumes) * train_split)
+    num_val_v = int(len(volumes) * val_split)
+    print(f'volume split: all: {len(volumes)}\ntrain: {num_train_v}\nvalid: {num_val_v}\ntest: {len(volumes)-num_train_v-num_val_v}')
+
+    # Split the filenames into the train, validation, and test sets
+    train_data_filenames = data_filenames[:num_train]
+    val_data_filenames = data_filenames[num_train:num_train + num_val]
+    test_data_filenames = data_filenames[num_train + num_val:]
+    
+    
+    # Split the volumes into the train, validation, and test sets
+    train_data_volumes = volumes[:num_train_v]
+    val_data_volumes = volumes[num_train_v:num_train_v + num_val_v]
+    test_data_volumes = volumes[num_train_v + num_val_v:]
+
+
+    
+    
+    # print(data_filenames[:100])
+    # Copy the images and labels to the train, validation, and test directories
+    for volume in volumes:
+        print(f'moving {volume}')
+        targets = [filename for filename in data_filenames if filename.startswith(volume)]
+        if volume in train_data_volumes:
+            print(f'{volume} is traininng')
+            for target in targets:
+                ct_filename = target + '__CT.png'
+                pet_filename = target + '__PT.png'
+                label_filename = target + '.png'
+                # print(ct_filename)
+                # print(pet_filename)
+                # print(label_filename)
+                shutil.move(f'{data_dir}/{ct_filename}', f'{train_data_dir}/{ct_filename}')
+                shutil.move(f'{data_dir}/{pet_filename}', f'{train_data_dir}/{pet_filename}')
+                shutil.move(f'{label_dir}/{label_filename}', f'{train_label_dir}/{label_filename}')
+ 
+        elif volume in val_data_volumes:
+            print(f'{volume} is validation')
+            for target in targets:
+                ct_filename = target + '__CT.png'
+                pet_filename = target + '__PT.png'
+                label_filename = target + '.png'
+                # print(ct_filename)
+                # print(pet_filename)
+                # print(label_filename)
+                shutil.move(f'{data_dir}/{ct_filename}', f'{val_data_dir}/{ct_filename}')
+                shutil.move(f'{data_dir}/{pet_filename}', f'{val_data_dir}/{pet_filename}')
+                shutil.move(f'{label_dir}/{label_filename}', f'{val_label_dir}/{label_filename}')
+
+
+        elif volume in test_data_volumes:
+            print(f'{volume} is testing')
+            for target in targets:
+                ct_filename = target + '__CT.png'
+                pet_filename = target + '__PT.png'
+                label_filename = target + '.png'
+                # print(ct_filename)
+                # print(pet_filename)
+                # print(label_filename)
+                shutil.move(f'{data_dir}/{ct_filename}', f'{test_data_dir}/{ct_filename}')
+                shutil.move(f'{data_dir}/{pet_filename}', f'{test_data_dir}/{pet_filename}')
+                shutil.move(f'{label_dir}/{label_filename}', f'{test_label_dir}/{label_filename}')
+        
+
+    print('test train split completed')
+    
 
 def ct_to_png(step='train'):
     ''' convert ct pet and mask to png '''
@@ -357,7 +457,7 @@ def ct_to_png(step='train'):
     image_dir = f'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/ct_only/{step}_images'
     mask_dir = f'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/ct_only/{step}_labels'
     trgt_dir = 'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/ct_only_png/' 
-    
+
     image_list = sorted(get_image_list(image_dir))
     print(f'starting {step} -- found {len(image_list)} images ')
     # print(image_list)
@@ -442,6 +542,28 @@ if __name__ == '__main__':
     #              mask_test )
 
     ''' convert CT and Mask to PNG '''
-    steps = ['test', 'valid', 'train']
-    for step in steps:
-        ct_to_png(step=step)
+    # steps = ['test', 'valid', 'train']
+    # for step in steps:
+    #     ct_to_png(step=step)
+
+
+    ''' train test split for CT PET png '''
+    # # target folders
+    image_root = './data/data/train_images'
+    mask_root = './data/data/train_labels'
+    image_train = './data/ct_pet/train_images'
+    mask_train = './data/ct_pet/train_labels'
+    image_valid = './data/ct_pet/valid_images'
+    mask_valid = './data/ct_pet/valid_labels'
+    image_test = './data/ct_pet/test_images'
+    mask_test = './data/ct_pet/test_labels'
+    split_dataset_pet(image_root,
+                 mask_root,
+                 image_train,
+                 mask_train,
+                 image_valid,
+                 mask_valid,
+                 image_test,
+                 mask_test )
+
+        

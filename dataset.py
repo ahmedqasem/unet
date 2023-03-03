@@ -58,8 +58,8 @@ class HecktorDataset(Dataset):
         # set the path to load images from
         img_path = os.path.join(self.image_dir, self.images[index])
         # print(f'loading images from {img_path}')
-        slice_name = img_path.split('\\')[-1].split('__')[0]
-        print(f'folder name is {slice_name}')
+        slice_name = img_path.split('/')[-1].split('__')[0]
+        # print(f'folder name is {slice_name}')
 
         CT_img_path = os.path.join(self.image_dir, f'{slice_name}__CT.png')
         # print(f'CT image file name is {CT_img_path}')
@@ -92,7 +92,7 @@ class HecktorDataset(Dataset):
 
         # convert PET CT to 2 channel image
         image = np.moveaxis(np.concatenate((np.expand_dims(CT_image, axis=0), np.expand_dims(PET_image, axis=0)), axis=0), 0, -1)
-        # print(image.shape)
+        # print('*******', image.shape)
 
         # perform data augmentation using the albemntations library 
         if self.transform is not None:
@@ -117,7 +117,7 @@ class HecktorDataset_CT(Dataset):
         # set the path to load images from
         img_path = os.path.join(self.image_dir, self.images[index])
         # print(f'loading images from {img_path}')
-        slice_name = img_path.split('\\')[-1].split('__')[0]
+        slice_name = img_path.split('/')[-1].split('__')[0]
         # print(f'folder name is {slice_name}')
 
         CT_img_path = os.path.join(self.image_dir, f'{slice_name}__CT.png')
@@ -125,7 +125,7 @@ class HecktorDataset_CT(Dataset):
         mask_path = os.path.join(self.mask_dir, f'{slice_name}.png')
         # print(f'loading mask from {mask_path}')
         # load images and mask
-        CT_image = np.array(Image.open(CT_img_path).convert('RGB'), dtype=np.float32)
+        CT_image = np.array(Image.open(CT_img_path).convert('L'), dtype=np.float32)
         # print('ct shape is: ', CT_image.shape)
         mask = np.array(Image.open(mask_path).convert('L'), dtype=np.float32)
         # print('mask shape is: ', mask.shape)
@@ -220,9 +220,9 @@ def display_image3(image, mask, idx=35):
 
 def test_hecktor():
 
-    image_dir ='E:/Datasets/monte_carlo_segmentation/hecktor2022_training/jpg/train_images'
-    mask_dir = 'E:/Datasets/monte_carlo_segmentation/hecktor2022_training/jpg/train_masks'
-    img = HecktorDataset_CT(image_dir=image_dir, mask_dir=mask_dir)
+    image_dir ='./data/ct_pet/train_images'
+    mask_dir = './data/ct_pet/train_labels'
+    img = HecktorDataset(image_dir=image_dir, mask_dir=mask_dir)
     print(f'found {img.__len__()} PET/CT image pairs')
     
     image, mask = img.__getitem__(33)
@@ -232,8 +232,8 @@ def test_hecktor():
     # print(f'found mask: {np.moveaxis(mask, 2, 0)[0].shape}')
 
     # view sample image and GT
-    idx = random.randint(0, img.__len__())
-    display_image3(image, mask, idx)
+    # idx = random.randint(0, img.__len__())
+    # display_image3(image, mask, idx)
 
 
 def test_ct():
@@ -249,4 +249,4 @@ def test_ct():
     display_image3(image, mask, idx=idx)
 
 if __name__ == "__main__":
-    test_ct()
+    test_hecktor()

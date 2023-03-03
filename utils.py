@@ -1,6 +1,6 @@
 import torch 
 import torchvision
-from dataset import CarvanaDataset, HecktorDataset_CT
+from dataset import CarvanaDataset, HecktorDataset_CT, HecktorDataset
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import numpy as np
@@ -27,7 +27,7 @@ def get_loaders(
     pin_memory=True
 ):
 
-    train_ds = HecktorDataset_CT(
+    train_ds = HecktorDataset(
         image_dir=train_dir,
         mask_dir=train_maskdir,
         transform=train_transform
@@ -41,7 +41,7 @@ def get_loaders(
         shuffle=True
     )
 
-    val_ds = HecktorDataset_CT(
+    val_ds = HecktorDataset(
         image_dir=val_dir,
         mask_dir=val_maskdir,
         transform=val_transform
@@ -89,7 +89,7 @@ def check_accuracy(loader, model, device='cuda'):
     num_pixels = 0
     dice_score = 0
     model.eval()
-    # print('********************', len(loader))
+    # print('********************', len(loader)) 
     with torch.no_grad():
         for x,y in loader:
             x = x.to(device)#.unsqueeze(1) # unsqueeze because 1 channel images 
@@ -101,10 +101,32 @@ def check_accuracy(loader, model, device='cuda'):
             dice_score += (2 * (preds * y).sum()) / (
                 (preds + y).sum() + 1e-8
             )
-
-    print(f' Got {num_correct}/{num_pixels} with acc {num_correct/num_pixels*100:.2f}')
-    print(f' Dice score: {dice_score/len(loader)}')
+    
+    acc = num_correct/num_pixels*100
+    dc_score = dice_score/len(loader)
+    
+    # print(f' Got {num_correct}/{num_pixels} with acc {num_correct/num_pixels*100:.2f}')
+    # print(f' Dice score: {dice_score/len(loader)}')
     model.train()
+    return acc, dc_score
+
+
+def check_valid_loss(loader, model, loss_fn, device='cuda'):
+    valid_loss = 0
+    for batch_idx, (data, targets) in enumerate(loader):
+        data = data.to(device = device)
+        targets = targets.float().unsqueeze(1).to(device=device)
+
+        # forward
+        with torch.cuda.amp.autocast():
+            predictions = model(data)
+            loss = loss_fn(predictions, targets)
+            
+        # calculate the loss
+        valid_loss += loss.item()
+    
+    valid_loss = valid_loss / len(loader)
+    return valid_loss
 
 
 def save_predictions_as_imgs(
