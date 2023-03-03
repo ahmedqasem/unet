@@ -67,7 +67,7 @@ def get_val_loader(
     pin_memory=True
 ):
 
-    val_ds = HecktorDataset_CT(
+    val_ds = HecktorDataset(
         image_dir=val_dir,
         mask_dir=val_maskdir,
         transform=val_transform

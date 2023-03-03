@@ -1,5 +1,5 @@
 import torch
-from torchinfo import summary
+# from torchinfo import summary
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 from tqdm import tqdm
@@ -135,16 +135,20 @@ def main():
               'valid_acc': [],
               'valid_dice': []}
     
+    with open(f'./trained_models/{LOG_FILE}.csv', 'a') as f:
+            f.write(f'train_loss,train_acc,train_dice,valid_loss,train_loss,\
+            valid_acc,valid_dice\n')
+    
     for epoch in range(NUM_EPOCHS):
         print(f'epoch {epoch+1}/{NUM_EPOCHS}')
         train_loss, train_acc, train_dice = train_fn(train_loader, model, optimizer, loss_fn, scaler)
 
-#         # save model
-#         checkpoint = {
-#             'state_dict': model.state_dict(),
-#             'optimmizer': optimizer.state_dict(),
-#         }
-#         save_checkpoint(checkpoint, filename=f'trained_models/{CHECKPOINT}')
+        # save model
+        checkpoint = {
+            'state_dict': model.state_dict(),
+            'optimmizer': optimizer.state_dict(),
+        }
+        save_checkpoint(checkpoint, filename=f'trained_models/{CHECKPOINT}')
 
         # check valid loss 
         valid_loss = check_valid_loss(val_loader, model, loss_fn, device=DEVICE)
@@ -162,6 +166,11 @@ def main():
         results['valid_loss'].append(valid_loss)
         results['valid_acc'].append(valid_acc.item())
         results['valid_dice'].append(valid_dice.item())
+        
+        # append log file for training
+        with open(f'./trained_models/{LOG_FILE}.csv', 'a') as f:
+            f.write(f'{train_loss},{train_acc},{train_dice},{valid_loss},{valid_acc},{valid_dice}\n')
+        
     
     # return the filled results
     return results
@@ -171,4 +180,4 @@ def main():
 if __name__ == '__main__':
     results = main()
     print('finished training')
-    print(results)
+    # print(results)

@@ -99,7 +99,7 @@ class HecktorDataset(Dataset):
             augmentations = self.transform(image=image, mask=mask) 
             image = augmentations['image']
             mask = augmentations['mask']
-
+        print(image.shape, mask.shape)
         return image, mask
 
 class HecktorDataset_CT(Dataset):
